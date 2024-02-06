@@ -11,6 +11,8 @@ struct ImageConverter {
     path: String
 }
 
+// TODO: Figure out if you could (ab)use the alpha channel
+// of the PNG to read 4 bytes of the top.
 impl ImageConverter {
     pub fn new(path: &str) -> ImageConverter {
         ImageConverter { path: String::from(path) }
