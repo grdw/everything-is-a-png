@@ -61,8 +61,6 @@ impl ImageConverter {
 
                 let x = n % d;
                 let y = n / d;
-
-
                 let pixel = imgbuf.get_pixel_mut(x, y);
                 let mut buf = [0, 0, 0];
 
