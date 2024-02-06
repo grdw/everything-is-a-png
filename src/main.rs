@@ -17,7 +17,9 @@ impl ImageConverter {
     }
 
     pub fn from_jpg(&self) -> std::io::Result<()> {
-        let mut file = File::create(format!("unwrapped.{}", self.path))?;
+        let n = self.path.len();
+        let t = String::from(&self.path[0..n-4]);
+        let mut file = File::create(format!("unwrapped.{}", t))?;
         let img = image::open(&self.path).unwrap();
         for (_x, _y, pixel) in img.pixels() {
             let buf = [pixel.0[0], pixel.0[1], pixel.0[2]];
@@ -34,7 +36,7 @@ impl ImageConverter {
         let d = (pixels as f64).sqrt().ceil() as u32;
 
         let mut reader = BufReader::with_capacity(BUFFER_SIZE, f);
-        let mut imgbuf = ImageBuffer::new(d, d + 1);
+        let mut imgbuf = ImageBuffer::new(d, d);
         let mut n = 0;
 
         loop {
@@ -76,7 +78,7 @@ impl ImageConverter {
 
             reader.consume(length);
         }
-        imgbuf.save(format!("{}.jpg", self.path)).unwrap();
+        imgbuf.save(format!("{}.png", self.path)).unwrap();
         Ok(())
     }
 }
