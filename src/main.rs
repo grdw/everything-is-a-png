@@ -16,6 +16,8 @@ impl ImageConverter {
         ImageConverter { path: String::from(path) }
     }
 
+    // TODO: Make your buffer 1024 bytes, and not 3 bytes
+    // TODO: In the final blurb, trim off the last 0's
     pub fn from_jpg(&self) -> std::io::Result<()> {
         let n = self.path.len();
         let t = String::from(&self.path[0..n-4]);
