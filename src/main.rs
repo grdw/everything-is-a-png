@@ -25,9 +25,23 @@ impl ImageConverter {
         let t = String::from(&self.path[0..n-4]);
         let mut file = File::create(format!("unwrapped.{}", t))?;
         let img = image::open(&self.path).unwrap();
+
+        let mut buffer = [0; BUFFER_SIZE];
+        let mut n = 0;
         for (_x, _y, pixel) in img.pixels() {
-            let buf = [pixel.0[0], pixel.0[1], pixel.0[2]];
-            file.write_all(&buf)?;
+            let p = &pixel.0[0..COLOR_SPACE];
+
+            for (k, j) in (n..n+COLOR_SPACE).enumerate() {
+                buffer[j] = p[k]
+            }
+
+            n += COLOR_SPACE;
+
+            if n % BUFFER_SIZE == 0 {
+                file.write_all(&buffer)?;
+                buffer = [0; BUFFER_SIZE];
+                n = 0;
+            }
         }
         Ok(())
     }
