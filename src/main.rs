@@ -13,36 +13,50 @@ struct ImageConverter {
 
 // TODO: Figure out if you could (ab)use the alpha channel
 // of the PNG to read 4 bytes of the top.
+// TODO: How do you dunk out the filesize into image space?
+// Or perhaps: how do you indicate an "END" like 50 white pixels or
+// something dumb like that?
+// TODO: What's the max file size of a PNG? How much gunk can you
+// dunk?
 impl ImageConverter {
     pub fn new(path: &str) -> ImageConverter {
         ImageConverter { path: String::from(path) }
     }
 
-    // TODO: Make your buffer 1024 bytes, and not 3 bytes
-    // TODO: In the final blurb, trim off the last 0's
     pub fn from_image(&self) -> std::io::Result<()> {
         let n = self.path.len();
         let t = String::from(&self.path[0..n-4]);
         let mut file = File::create(format!("unwrapped.{}", t))?;
         let img = image::open(&self.path).unwrap();
+        let (width, _) = img.dimensions();
 
-        let mut buffer = [0; BUFFER_SIZE];
+        let mut buffer = vec![];
         let mut n = 0;
-        for (_x, _y, pixel) in img.pixels() {
-            let p = &pixel.0[0..COLOR_SPACE];
-
+        for (x, y, pixel) in img.pixels() {
             for (k, j) in (n..n+COLOR_SPACE).enumerate() {
-                buffer[j] = p[k]
+                buffer.insert(j, pixel.0[k])
             }
 
             n += COLOR_SPACE;
 
             if n % BUFFER_SIZE == 0 {
+                // NOTE: Ugly hack incoming
+                // Ugh ... I should probably know the original
+                // filesize ...
+                if y + 1 == width {
+                    let mut fixed_buffer = vec![];
+                    for i in buffer {
+                        if i == 0 { continue }
+                        fixed_buffer.insert(0, i)
+                    }
+                    buffer = fixed_buffer;
+                }
                 file.write_all(&buffer)?;
-                buffer = [0; BUFFER_SIZE];
+                buffer = vec![];
                 n = 0;
             }
         }
+
         Ok(())
     }
 
@@ -117,6 +131,26 @@ mod tests {
     use super::*;
     use std::fs;
 
+    fn file_check(path: &'static str) -> (u64, String) {
+        let f = File::open(path).unwrap();
+        let metadata = f.metadata().unwrap();
+        let file_size = metadata.len();
+
+        let mut reader = BufReader::with_capacity(BUFFER_SIZE, f);
+
+        loop {
+            let buffer = reader.fill_buf().unwrap();
+            let length = buffer.len();
+            if length == 0 {
+                break;
+            }
+
+            reader.consume(length);
+        }
+
+        (file_size, String::from(""))
+    }
+
     #[test]
     fn to_image_test() {
         let file = ImageConverter::new("cat.jpg");
@@ -124,6 +158,11 @@ mod tests {
         let file = ImageConverter::new("cat.jpg.png");
         let _ = file.from_image();
         // Test if the file size is the same and do some md5 test
+        let (s1, md51) = file_check("cat.jpg");
+        let (s2, md52) = file_check("unwrapped.cat.jpg");
+
+        assert_eq!(s1, s2);
+        assert_eq!(md51, md52);
 
         // Clean-up:
         fs::remove_file("cat.jpg.png").unwrap();
