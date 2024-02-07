@@ -20,7 +20,7 @@ impl ImageConverter {
 
     // TODO: Make your buffer 1024 bytes, and not 3 bytes
     // TODO: In the final blurb, trim off the last 0's
-    pub fn from_jpg(&self) -> std::io::Result<()> {
+    pub fn from_image(&self) -> std::io::Result<()> {
         let n = self.path.len();
         let t = String::from(&self.path[0..n-4]);
         let mut file = File::create(format!("unwrapped.{}", t))?;
@@ -32,7 +32,7 @@ impl ImageConverter {
         Ok(())
     }
 
-    pub fn to_jpg(&self) -> std::io::Result<()> {
+    pub fn to_image(&self) -> std::io::Result<()> {
         let f = File::open(&self.path)?;
         let metadata = f.metadata()?;
         let file_size = metadata.len();
@@ -66,7 +66,7 @@ impl ImageConverter {
                 let x = n % d;
                 let y = n / d;
                 let pixel = imgbuf.get_pixel_mut(x, y);
-                let mut buf = [0, 0, 0];
+                let mut buf = [0; COLOR_SPACE];
 
                 for j in 0..slice.len() {
                     buf[j] = slice[j];
@@ -92,19 +92,27 @@ fn main() -> std::io::Result<()> {
     }
     let file = ImageConverter::new(&args[2]);
     return match args[1].as_str() {
-        "jpg" => file.to_jpg(),
-        "unjpg" => file.from_jpg(),
+        "img" => file.to_image(),
+        "unimg" => file.from_image(),
         _ => panic!("Invalid first argument")
     }
 }
 
-#[test]
-fn to_image_test() {
-    let file = ImageConverter::new("cat.jpg");
-    file.to_jpg();
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
 
-#[test]
-fn from_image_test() {
+    #[test]
+    fn to_image_test() {
+        let file = ImageConverter::new("cat.jpg");
+        let _ = file.to_image();
+        let file = ImageConverter::new("cat.jpg.png");
+        let _ = file.from_image();
+        // Test if the file size is the same and do some md5 test
 
+        // Clean-up:
+        fs::remove_file("cat.jpg.png").unwrap();
+        fs::remove_file("unwrapped.cat.jpg").unwrap();
+    }
 }
