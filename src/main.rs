@@ -131,7 +131,7 @@ mod tests {
     use super::*;
     use std::fs;
 
-    fn file_check(path: &'static str) -> (u64, String) {
+    fn file_check(path: &str) -> (u64, String) {
         let f = File::open(path).unwrap();
         let metadata = f.metadata().unwrap();
         let file_size = metadata.len();
@@ -153,19 +153,24 @@ mod tests {
 
     #[test]
     fn to_image_test() {
-        let file = ImageConverter::new("cat.jpg");
-        let _ = file.to_image();
-        let file = ImageConverter::new("cat.jpg.png");
-        let _ = file.from_image();
-        // Test if the file size is the same and do some md5 test
-        let (s1, md51) = file_check("cat.jpg");
-        let (s2, md52) = file_check("unwrapped.cat.jpg");
+        let files = vec!["cat.jpg", "hello-world.txt"];
+        for f in files {
+            let file = ImageConverter::new(f);
+            let conv_name = format!("{}.png", f);
+            let reconv_name = format!("unwrapped.{}", f);
+            let _ = file.to_image();
+            let file = ImageConverter::new(&conv_name);
+            let _ = file.from_image();
+            // Test if the file size is the same and do some md5 test
+            let (s1, md51) = file_check(f);
+            let (s2, md52) = file_check(&reconv_name);
 
-        assert_eq!(s1, s2);
-        assert_eq!(md51, md52);
+            assert_eq!(s1, s2);
+            assert_eq!(md51, md52);
 
-        // Clean-up:
-        fs::remove_file("cat.jpg.png").unwrap();
-        fs::remove_file("unwrapped.cat.jpg").unwrap();
+            // Clean-up:
+            fs::remove_file(&conv_name).unwrap();
+            fs::remove_file(&reconv_name).unwrap();
+        }
     }
 }
