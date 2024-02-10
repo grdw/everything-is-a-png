@@ -47,15 +47,6 @@ impl ImageConverter {
 
         // Write the final buffer
         if buffer.len() > 0 {
-            // NOTE: Ugly hack incoming
-            // Ugh ... I should probably know the original
-            // filesize ...
-            let mut fixed_buffer = vec![];
-            for i in buffer.into_iter().rev() {
-                if i == 0 { continue }
-                fixed_buffer.insert(0, i)
-            }
-            buffer = fixed_buffer;
             file.write_all(&buffer)?;
         }
 
