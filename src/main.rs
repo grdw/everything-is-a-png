@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader, Write};
 use image::{GenericImageView, ImageBuffer};
 
 const BUFFER_SIZE: usize = 3000;
-const COLOR_SPACE: usize = 3;
+const COLOR_SPACE: usize = 4;
 
 struct ImageConverter {
     path: String
@@ -32,29 +32,32 @@ impl ImageConverter {
 
         let mut buffer = vec![];
         let mut n = 0;
-        for (x, y, pixel) in img.pixels() {
+        for (_, _, pixel) in img.pixels() {
             for (k, j) in (n..n+COLOR_SPACE).enumerate() {
                 buffer.insert(j, pixel.0[k])
             }
 
             n += COLOR_SPACE;
 
-            if n % BUFFER_SIZE == 0 {
-                // NOTE: Ugly hack incoming
-                // Ugh ... I should probably know the original
-                // filesize ...
-                if y + 1 == width {
-                    let mut fixed_buffer = vec![];
-                    for i in buffer {
-                        if i == 0 { continue }
-                        fixed_buffer.insert(0, i)
-                    }
-                    buffer = fixed_buffer;
-                }
+            if buffer.len() == BUFFER_SIZE {
                 file.write_all(&buffer)?;
                 buffer = vec![];
                 n = 0;
             }
+        }
+
+        // Write the final buffer
+        if buffer.len() > 0 {
+            // NOTE: Ugly hack incoming
+            // Ugh ... I should probably know the original
+            // filesize ...
+            let mut fixed_buffer = vec![];
+            for i in buffer {
+                if i == 0 { continue }
+                fixed_buffer.insert(0, i)
+            }
+            buffer = fixed_buffer;
+            file.write_all(&buffer)?;
         }
 
         Ok(())
@@ -100,7 +103,7 @@ impl ImageConverter {
                     buf[j] = slice[j];
                 }
 
-                *pixel = image::Rgb(buf);
+                *pixel = image::Rgba(buf);
 
                 n += 1;
                 start += COLOR_SPACE
