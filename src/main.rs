@@ -28,7 +28,6 @@ impl ImageConverter {
         let t = String::from(&self.path[0..n-4]);
         let mut file = File::create(format!("unwrapped.{}", t))?;
         let img = image::open(&self.path).unwrap();
-        let (width, _) = img.dimensions();
 
         let mut buffer = vec![];
         let mut n = 0;
