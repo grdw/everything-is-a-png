@@ -52,7 +52,7 @@ impl ImageConverter {
             // Ugh ... I should probably know the original
             // filesize ...
             let mut fixed_buffer = vec![];
-            for i in buffer {
+            for i in buffer.into_iter().rev() {
                 if i == 0 { continue }
                 fixed_buffer.insert(0, i)
             }
